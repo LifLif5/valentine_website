@@ -55,4 +55,4 @@ def memory_game():
 if __name__ == "__main__":
     # This makes the server run when you execute `python app.py`
     # debug=True allows the server to auto-reload when you save changes.
-    app.run(debug=True)
+    app.run(debug=False)

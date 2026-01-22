@@ -4,19 +4,22 @@
 <div class="container mx-auto text-center p-4">
 
     <div class="mb-8">
-        <h1 class="text-5xl md:text-6xl font-bold text-primary">משחק הזיכרון  </h1>
-        <p class="text-xl mt-2">מאחורי כל קלף מסתתר חצי מתמונה שלנו ביחד</p>
-        <p class="text-xl mt-2">תנסי להתאים בין 2 חצאים של אותן התמונות (ותוכיחי לי שהזכרון שלך מצויין למרות ההייט)</p>
-
+        <h1 class="text-5xl md:text-6xl font-bold text-primary">השלימי את התמונה</h1>
+        <p class="text-xl mt-2">מצא/י את שני החצאים שמשלימים לתמונה אחת!</p>
     </div>
 
-    <div id="game-board" class="grid grid-cols-4 sm:grid-cols-8 gap-4 max-w-8xl mx-auto mb-8">
+    <div id="game-board" class="grid grid-cols-3 sm:grid-cols-4 gap-4 max-w-2xl mx-auto mb-8">
         {% for card in cards %}
         <div class="game-card aspect-square bg-base-300 rounded-lg shadow-lg cursor-pointer" data-image="{{ card.url }}">
             <div class="card-inner">
                 
-                <div class="card-front {{ card.side }}" 
-                     style="background-image: url('{{ url_for('static', filename=card.url) }}');">
+                <div class="card-front bg-white overflow-hidden relative">
+                    <img src="{{ url_for('static', filename=card.url) }}" 
+                         alt="Memory"
+                         class="absolute top-0 h-full max-w-none object-cover"
+                         style="width: 200%; {{ 'left: 0;' if card.side == 'left' else 'left: -100%;' }}">
+                    
+                    <div class="absolute inset-y-0 {{ 'right-0 border-r-2' if card.side == 'left' else 'left-0 border-l-2' }} border-dashed border-white/30 pointer-events-none"></div>
                 </div>
 
                 <div class="card-back bg-secondary rounded-lg flex items-center justify-center">
@@ -31,14 +34,14 @@
 
     <a href="{{ url_for('home') }}" class="btn btn-ghost">חזרה לדף הראשי</a>
 
-    <div id="combined-image-overlay" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center hidden z-50">
-        <div class="relative max-w-[90vw] max-h-[90vh]">
-            <img id="combined-image" src="" alt="Memory" class="rounded-lg shadow-lg object-contain max-h-[85vh]">
+    <div id="combined-image-overlay" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center hidden z-50">
+        <div class="relative max-w-[95vw] max-h-[95vh]">
+            <img id="combined-image" src="" alt="Memory" class="rounded-lg shadow-2xl object-contain max-h-[85vh]">
             <button id="close-overlay-button" class="absolute -top-4 -right-4 btn btn-sm btn-circle btn-error">✕</button>
         </div>
     </div>
 
-    <div id="celebration" class="fixed inset-0 bg-black bg-opacity-60 flex flex-col items-center justify-center text-white p-8 hidden z-50">
+    <div id="celebration" class="fixed inset-0 bg-black bg-opacity-80 flex flex-col items-center justify-center text-white p-8 hidden z-50">
         <h2 class="text-6xl md:text-8xl font-bold" style="font-family: var(--font-header);">כל הכבוד!</h2>
         <p class="text-2xl md:text-3xl mt-4">השלמת את כל התמונות שלנו ❤️</p>
         <button id="restart-button" class="btn btn-primary mt-8 btn-lg">שחקי שוב</button>
@@ -70,31 +73,13 @@
         height: 100%;
         backface-visibility: hidden;
         border-radius: 0.5rem;
-        background-color: white; 
     }
-
-    /* --- The Split Logic --- */
-    .card-front {
-        background-repeat: no-repeat;
-        /* Zoom the image so it is double the width of the card.
-           This allows us to show only half of it. */
-        background-size: 200% 100%; 
-    }
-
-    /* If it's a LEFT card, align image to the left edge */
-    .card-front.left {
-        background-position: left center;
-        border-right: 2px dashed rgba(0,0,0,0.1); /* Cute detail: dashed line where cut */
-    }
-
-    /* If it's a RIGHT card, align image to the right edge */
-    .card-front.right {
-        background-position: right center;
-        border-left: 2px dashed rgba(0,0,0,0.1);
-    }
-
     .card-back {
         transform: rotateY(180deg);
+    }
+    .card-front {
+        /* No transform needed here as it's the "front" face (0deg relative to inner) */
+        transform: rotateY(0deg); 
     }
 </style>
 
@@ -132,8 +117,6 @@
         }
 
         function checkForMatch() {
-            // Logic: Do the data-image URLs match? 
-            // Since we have one Left and one Right for each URL, this is sufficient!
             let isMatch = firstCard.dataset.image === secondCard.dataset.image;
             isMatch ? disableCards() : unflipCards();
         }
@@ -143,12 +126,10 @@
             secondCard.removeEventListener('click', flipCard);
             matchesFound++;
 
-            // Show full image overlay
             setTimeout(() => {
-                // Parse the URL from the background-image style to show in full screen
-                const style = firstCard.querySelector('.card-front').style.backgroundImage;
-                // Clean up the url(...) wrapper to get just the path
-                const url = style.slice(4, -1).replace(/"/g, "");
+                // We grab the src from the <img> tag directly now
+                const img = firstCard.querySelector('.card-front img');
+                const url = img.getAttribute('src');
                 showImageOverlay(url);
             }, 600);
         }
@@ -179,7 +160,6 @@
             if (matchesFound === totalPairs) {
                 setTimeout(showCelebration, 500);
             }
-            
             resetBoard();
         });
 
@@ -187,15 +167,9 @@
             celebrationOverlay.classList.remove('hidden');
             celebrationOverlay.classList.add('flex');
             var duration = 3 * 1000;
-            var animationEnd = Date.now() + duration;
             var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 999 };
-
-            var interval = setInterval(function() {
-                var timeLeft = animationEnd - Date.now();
-                if (timeLeft <= 0) return clearInterval(interval);
-                var particleCount = 50 * (timeLeft / duration);
-                confetti(Object.assign({}, defaults, { particleCount, origin: { x: Math.random(), y: Math.random() - 0.2 } }));
-            }, 250);
+            
+            confetti({ ...defaults, particleCount: 100, origin: { y: 0.6 } });
         }
 
         restartButton.addEventListener('click', () => {
