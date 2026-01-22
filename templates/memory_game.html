@@ -9,9 +9,9 @@
         <p class="text-xl mt-2">תנסי להתאים בין 2 חצאים של אותן התמונות (ותוכיחי לי שהזכרון שלך מצויין למרות ההייט)</p>
     </div>
 
-    <div id="game-board" class="grid grid-cols-3 sm:grid-cols-4 gap-4 max-w-2xl mx-auto mb-8">
+    <div id="game-board" class="grid grid-cols-4 sm:grid-cols-8 gap-4 max-w-4xl mx-auto mb-8">
         {% for card in cards %}
-        <div class="game-card aspect-square bg-base-300 rounded-lg shadow-lg cursor-pointer" data-image="{{ card.url }}">
+        <div class="game-card aspect-[2/3] bg-base-300 rounded-lg shadow-lg cursor-pointer" data-image="{{ card.url }}">
             <div class="card-inner">
                 
                 <div class="card-front bg-white overflow-hidden relative">
