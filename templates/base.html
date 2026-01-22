@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<!-- Set the language to Hebrew (he) and text direction to Right-to-Left (rtl) -->
+<!-- The data-theme attribute from DaisyUI sets the color scheme. 'valentine' is a great choice! -->
+<html lang="he" dir="rtl" data-theme="valentine">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>חוגגים שלוש שנים</title>
+
+    <!-- DaisyUI and TailwindCSS from a CDN for styling -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.11.1/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- We are importing Amatic SC (for headers) and Rubik (for body text) -->
+    <link href="https://fonts.googleapis.com/css2?family=Amatic+SC:wght@700&family=Rubik:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- A little bit of custom CSS to apply our chosen fonts -->
+    <style>
+        /* Using CSS variables makes it easy to manage fonts */
+        :root {
+            --font-header: 'Amatic SC', cursive;
+            --font-body: 'Rubik', sans-serif;
+        }
+        /* Apply the header font to all heading elements */
+        h1, h2, h3, h4, h5, h6 {
+            font-family: var(--font-header);
+        }
+        /* Apply the body font to everything else for readability */
+        body, p, button, span, div {
+            font-family: var(--font-body);
+        }
+    </style>
+</head>
+<!-- These classes make the content centered on the page vertically and horizontally -->
+<body class="min-h-screen bg-base-100 flex items-center justify-center p-4">
+
+    <!-- This is a Jinja2 block. The content from index.html will be injected here. -->
+    {% block content %}{% endblock %}
+
+</body>
+</html>
