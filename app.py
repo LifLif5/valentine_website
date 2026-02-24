@@ -1,7 +1,10 @@
 from datetime import datetime
 import random
 from flask import Flask, render_template
-
+from riddle_logic import get_character_list, build_prompt # Add this import at the top
+from flask import request, jsonify # Make sure to import jsonify and request
+# import gemini_chat
+import groq_chat
 # Initialize the Flask application
 app = Flask(__name__)
 
@@ -51,8 +54,29 @@ def memory_game():
     
     return render_template("memory_game.html", cards=cards)
 
+# The 'endpoint' is the name of this function: 'riddle'
+@app.route('/riddle')
+def riddle():
+    # Fetch the list from the helper file
+    characters = get_character_list()
+    return render_template('riddle.html', characters=characters)
+
+@app.route('/api/chat', methods=['POST'])
+def chat_api():
+    data = request.get_json()
+    char_name = data.get('character')
+    history = data.get('history')
+    
+    try:
+        # קריאה לפונקציה מתוך riddle.py
+        reply = groq_chat.get_ai_response(char_name, history)
+        return jsonify({"reply": reply})
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({"reply": "סליחה, אני קצת מבולבל כרגע. נסי שוב?"}), 500
+
 
 if __name__ == "__main__":
     # This makes the server run when you execute `python app.py`
     # debug=True allows the server to auto-reload when you save changes.
-    app.run(debug=False)
+    app.run(debug=True)

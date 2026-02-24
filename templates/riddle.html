@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto p-4 max-w-6xl">
+    <div class="text-center mb-8">
+        <h1 class="text-6xl font-bold text-primary font-header">מהי המתנה?</h1>
+        <p class="text-2xl mt-2">בחרי דמות כדי להתחיל בצ'אט ולגלות מידע</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[80vh]">
+        
+        <!-- Character Selection Area -->
+        <div class="lg:col-span-4 overflow-y-auto pr-2 bg-base-200/50 rounded-3xl p-4">
+            <h2 class="text-3xl font-bold mb-6 text-center text-secondary">הדמויות</h2>
+            
+            <div class="grid grid-cols-2 gap-4">
+                {% for character in characters %}
+                <div onclick="selectCharacter('{{ character.name }}', '{{ character.image }}', '{{ character.opening }}')" 
+                    class="card bg-base-100 shadow-xl hover:shadow-2xl hover:scale-105 transition-all cursor-pointer border-2 border-transparent hover:border-primary group">
+                    <figure class="px-2 pt-2">
+                        <img src="{{ url_for('static', filename='character_images/' + character.image) }}" 
+                            alt="{{ character.name }}" 
+                            class="rounded-xl object-cover h-40 w-full shadow-sm group-hover:shadow-md transition-shadow">
+                    </figure>
+                    <div class="card-body items-center text-center p-3">
+                        <h2 class="card-title text-xl group-hover:text-primary transition-colors">{{ character.name }}</h2>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="lg:col-span-8 flex flex-col bg-base-100 rounded-3xl shadow-2xl overflow-hidden border border-base-300 relative">
+            <!-- Chat Header -->
+            <div id="chat-header" class="bg-gradient-to-r from-primary to-secondary p-4 text-white flex items-center gap-6 shadow-md z-10">
+                <div class="relative">
+                    <div class="w-24 h-24 md:w-32 md:h-32 rounded-full bg-white/20 flex items-center justify-center overflow-hidden border-4 border-white shadow-lg shrink-0">
+                        <img id="header-img" src="" class="hidden w-full h-full object-cover">
+                        <span id="header-placeholder" class="text-6xl">?</span>
+                    </div>
+                    <!-- Online status indicator -->
+                    <div class="absolute bottom-2 right-2 w-6 h-6 bg-success rounded-full border-4 border-white hidden" id="online-indicator"></div>
+                </div>
+                
+                <div class="flex-1">
+                    <h3 id="active-char-name" class="font-bold text-3xl md:text-4xl drop-shadow-md">בחרי מישהו...</h3>
+                    <p id="header-subtitle" class="text-lg opacity-90 hidden font-medium">מחובר\ת כעת</p>
+                </div>
+            </div>
+
+            <!-- Chat Messages -->
+            <div id="chat-messages" class="flex-1 p-6 overflow-y-auto space-y-6 bg-pattern">
+                <!-- Placeholder message -->
+                <div class="flex flex-col items-center justify-center h-full text-base-content/30 space-y-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                    <p class="text-2xl font-bold">הצ'אט ממתין לך</p>
+                </div>
+            </div>
+
+            <form id="chat-form" class="p-4 bg-base-200 flex gap-3 items-center border-t border-base-300">
+                <input type="text" id="user-input" placeholder="כתבי הודעה..." 
+                       class="input input-bordered input-lg flex-1 rounded-full shadow-inner focus:ring-2 focus:ring-primary focus:border-transparent" required disabled>
+                <button type="submit" id="send-btn" class="btn btn-primary btn-circle btn-lg shadow-lg" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="text-center mt-8">
+        <a href="{{ url_for('home') }}" class="btn btn-ghost btn-lg">חזרה לדף הראשי</a>
+    </div>
+</div>
+
+<style>
+    .bg-pattern {
+        background-color: #f3f4f6;
+        background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+        background-size: 20px 20px;
+    }
+    [data-theme='valentine'] .bg-pattern {
+        background-color: #fae7f0;
+        background-image: radial-gradient(#fbcfe8 2px, transparent 2px);
+    }
+</style>
+
+<script>
+    const chatMessages = document.getElementById('chat-messages');
+    const chatForm = document.getElementById('chat-form');
+    const userInput = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+    const activeName = document.getElementById('active-char-name');
+    const headerImg = document.getElementById('header-img');
+    const headerPlaceholder = document.getElementById('header-placeholder');
+    const headerSubtitle = document.getElementById('header-subtitle');
+    const onlineIndicator = document.getElementById('online-indicator');
+
+    let currentCharacter = "";
+    // Store conversation history for everyone
+    let chatHistories = {}; 
+
+    
+    function selectCharacter(name, image, openingSentence) {
+        currentCharacter = name;
+        activeName.innerText = "צ'אט עם " + name;
+        headerImg.src = "/static/character_images/" + image;
+        headerImg.classList.remove('hidden');
+        headerPlaceholder.classList.add('hidden');
+        headerSubtitle.classList.remove('hidden');
+        onlineIndicator.classList.remove('hidden');
+        
+        userInput.disabled = false;
+        sendBtn.disabled = false;
+        
+        // If this is the first time clicking the character, initialize their history
+        if (!chatHistories[name]) {
+            chatHistories[name] = [
+                { role: "assistant", content: openingSentence }
+            ];
+        }
+        
+        renderChat();
+    }
+
+    function renderChat() {
+        chatMessages.innerHTML = ''; // Clear current view
+        const history = chatHistories[currentCharacter] || [];
+        
+        history.forEach(msg => {
+            const msgDiv = document.createElement('div');
+            if (msg.role === "assistant") {
+                msgDiv.className = 'chat chat-start';
+                msgDiv.innerHTML = `<div class="chat-bubble shadow-md text-lg">${msg.content}</div>`;
+            } else {
+                msgDiv.className = 'chat chat-end';
+                msgDiv.innerHTML = `<div class="chat-bubble chat-bubble-secondary text-lg shadow-md">${msg.content}</div>`;
+            }
+            chatMessages.appendChild(msgDiv);
+        });
+        
+        // Scroll to bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Handle sending message
+    chatForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const text = userInput.value.trim();
+        if (!text || !currentCharacter) return;
+
+        // 1. Add User message to history & render
+        chatHistories[currentCharacter].push({ role: "user", content: text });
+        renderChat();
+        userInput.value = '';
+
+        // 2. Send the history to Python
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    character: currentCharacter,
+                    history: chatHistories[currentCharacter]
+                })
+            });
+            
+            const data = await response.json();
+
+            // 3. Add the Python/LLM response to history & render
+            chatHistories[currentCharacter].push({ role: "assistant", content: data.reply });
+            renderChat();
+            
+        } catch (error) {
+            console.error("Error communicating with server:", error);
+            // Optional: Show an error bubble in the chat
+        }
+    });
+</script>
+{% endblock %}
