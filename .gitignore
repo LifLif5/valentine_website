@@ -5,6 +5,7 @@ ENV/
 env/
 __pycache__/
 # Python Cache
+__pycache__/
 */__pycache__/
 **/__pycache__/
 *.py[cod]
